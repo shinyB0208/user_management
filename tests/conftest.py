@@ -241,6 +241,7 @@ def email_service():
         return mock_service
     
 @pytest.fixture
+
 async def event(db_session: AsyncSession,admin_user):
 
     event = Event(
