@@ -40,3 +40,10 @@ async def test_get_by_id_event_not_exists(db_session, event):
     non_existent_event_id = "non-existent--event-id"
     retrieved_event = await EventService.get_by_id(db_session, non_existent_event_id)
     assert retrieved_event is None
+
+# Test updating a user with valid data
+async def test_update_event_valid_data(db_session, event):
+    title = "New Title"
+    updated_user = await EventService.update(db_session, event.id, {"title": title})
+    assert updated_user is not None
+    assert updated_user.title == title
