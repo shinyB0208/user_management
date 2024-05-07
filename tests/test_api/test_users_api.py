@@ -181,6 +181,17 @@ async def test_delete_user_does_not_exist(async_client, admin_token):
     delete_response = await async_client.delete(f"/users/{non_existent_user_id}", headers=headers)
     assert delete_response.status_code == 404
 
+
+@pytest.mark.asyncio
+async def test_update_user_email_duplicate_update_fail(async_client, admin_user,admin_token, unverified_user):
+    updated_data = {"email": f"updated_{admin_user.id}@example.com"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response1 = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    response2 = await async_client.put(f"/users/{unverified_user.id}", json=updated_data, headers=headers)
+    assert response1.status_code == 200
+    assert response2.status_code == 404
+    assert "Email address already taken" in response2.json().get("detail", "")
+
 @pytest.mark.asyncio
 async def test_update_user_github(async_client, admin_user, admin_token):
     updated_data = {"github_profile_url": "http://www.github.com/kaw393939"}
