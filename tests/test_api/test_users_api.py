@@ -260,3 +260,46 @@ async def test_retrieve_event_access(async_client, admin_token,event):
     assert response.json()["start_date"] is not None
     assert response.json()["description"] is not None
     assert response.json()["location"] is not None
+
+@pytest.mark.asyncio
+async def test_put_event(async_client,admin_token,event):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    data = {
+    "category": EventCategory.TECH.value,
+    "title": "Tech Conference 2024",
+    "description": "Annual technology conference featuring keynotes and workshops.",
+    "location": "New York City, USA",
+    }
+    response = await async_client.put(f"/events/{event.id}",json=data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["title"] == data["title"]
+    assert response.json()["category"] ==data["category"]
+    assert response.json()["description"] ==data["description"]
+    assert response.json()["location"] ==data["location"]
+
+@pytest.mark.asyncio
+async def test_put_event_invalid_token(async_client,user_token,event):
+    headers = {"Authorization": f"Bearer {user_token}"}
+
+    data = {
+    "category": EventCategory.TECH.value,
+    "title": "Tech Conference 2024",
+    "description": "Annual technology conference featuring keynotes and workshops.",
+    "location": "New York City, USA",
+    }
+    response = await async_client.put(f"/events/{event.id}",json=data, headers=headers)
+    assert response.status_code == 403
+
+@pytest.mark.asyncio
+async def test_put_event_invalid(async_client,admin_token):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    event_id = "00000000-0000-0000-0000-000000000000" 
+    data = {
+    "category": EventCategory.TECH.value,
+    "title": "Tech Conference 2024",
+    "description": "Annual technology conference featuring keynotes and workshops.",
+    "location": "New York City, USA",
+    }
+    response = await async_client.put(f"/events/{event_id}",json=data, headers=headers)
+    assert response.status_code == 404
