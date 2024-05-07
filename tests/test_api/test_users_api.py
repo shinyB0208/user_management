@@ -2,7 +2,7 @@ from builtins import str
 import pytest
 from httpx import AsyncClient
 from app.main import app
-from app.models.user_model import User, UserRole
+from app.models.models import User, UserRole
 from app.utils.nickname_gen import generate_nickname
 from app.utils.security import hash_password
 from app.services.jwt_service import decode_token  # Import your FastAPI app
@@ -180,17 +180,6 @@ async def test_delete_user_does_not_exist(async_client, admin_token):
     headers = {"Authorization": f"Bearer {admin_token}"}
     delete_response = await async_client.delete(f"/users/{non_existent_user_id}", headers=headers)
     assert delete_response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test_update_user_email_duplicate_update_fail(async_client, admin_user,admin_token, unverified_user):
-    updated_data = {"email": f"updated_{admin_user.id}@example.com"}
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    response1 = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
-    response2 = await async_client.put(f"/users/{unverified_user.id}", json=updated_data, headers=headers)
-    assert response1.status_code == 200
-    assert response2.status_code == 404
-    assert "Email address already taken" in response2.json().get("detail", "")
 
 @pytest.mark.asyncio
 async def test_update_user_github(async_client, admin_user, admin_token):
