@@ -261,6 +261,7 @@ async def test_retrieve_event_access(async_client, admin_token,event):
     assert response.json()["description"] is not None
     assert response.json()["location"] is not None
 
+    
 @pytest.mark.asyncio
 async def test_put_event(async_client,admin_token,event):
     headers = {"Authorization": f"Bearer {admin_token}"}
