@@ -15,22 +15,15 @@ WORKDIR /myapp
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
-    && apt-get install -y libc-bin=2.36-9+deb12u6 \
+    && apt-get install -y libc-bin=2.36-9+deb12u7 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies in /.venv
-COPY requirements.txt .
-RUN python -m venv /.venv \
-    && . /.venv/bin/activate \
-    && pip install --upgrade pip \
-    && pip install -r requirements.txt
-
-# Define a second stage for the runtime, using the same Debian Bookworm slim image
+	@@ -30,7 +30,7 @@ RUN python -m venv /.venv \
 FROM python:3.12-slim-bookworm as final
 
 # Upgrade libc-bin in the final stage to ensure security patch is applied
-RUN apt-get update && apt-get install -y libc-bin=2.36-9+deb12u6 \
+RUN apt-get update && apt-get install -y libc-bin=2.36-9+deb12u7 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
