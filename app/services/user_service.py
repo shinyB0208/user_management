@@ -97,16 +97,9 @@ class UserService:
             query = update(User).where(User.id == user_id).values(**validated_data).execution_options(synchronize_session="fetch")
             await cls._execute_query(session, query)
             updated_user = await cls.get_by_id(session, user_id)
-            if updated_user:
-                session.refresh(updated_user)  # Explicitly refresh the updated user object
-                logger.info(f"User {user_id} updated successfully.")
-                return updated_user
-            else:
-                logger.error(f"User {user_id} not found after update attempt.")
-            return None
-        except Exception as e:  # Broad exception handling for debugging
-            logger.error(f"Error during user update: {e}")
-            return None
+            session.refresh(updated_user)  # Explicitly refresh the updated user object
+            logger.info(f"User {user_id} updated successfully.")
+            return updated_user
 
     @classmethod
     async def delete(cls, session: AsyncSession, user_id: UUID) -> bool:
