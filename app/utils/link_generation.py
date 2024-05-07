@@ -60,5 +60,3 @@ def create_event_links(event_id: UUID, request: Request) -> List[Link]:
         create_link(rel, str(request.url_for(action, event_id=str(event_id))), method, action_desc)
         for rel, action, method, action_desc in actions
     ]
-  2 changes: 1 addition & 1 deletion2  
-tests/conftest.py
