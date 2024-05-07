@@ -173,7 +173,7 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))
 ):
-if limit>0:
+    if limit>0:
         total_users = await UserService.count(db)
         users = await UserService.list_users(db, skip, limit)
 
