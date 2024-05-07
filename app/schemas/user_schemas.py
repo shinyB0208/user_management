@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import Enum
 import uuid
 import re
-from app.models.user_model import UserRole
+from app.models.models import UserRole
 from app.utils.nickname_gen import generate_nickname
 
 

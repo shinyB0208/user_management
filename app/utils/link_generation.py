@@ -46,3 +46,19 @@ def generate_pagination_links(request: Request, skip: int, limit: int, total_ite
         links.append(create_pagination_link("prev", base_url, {'skip': max(skip - limit, 0), 'limit': limit}))
 
     return links
+
+def create_event_links(event_id: UUID, request: Request) -> List[Link]:
+    """
+    Generate navigation links for event actions.
+    """
+    actions = [
+        ("self", "get_event", "GET", "view"),
+        ("update", "update_event", "PUT", "update"),
+        ("delete", "delete_event", "DELETE", "delete")
+    ]
+    return [
+        create_link(rel, str(request.url_for(action, event_id=str(event_id))), method, action_desc)
+        for rel, action, method, action_desc in actions
+    ]
+  2 changes: 1 addition & 1 deletion2  
+tests/conftest.py

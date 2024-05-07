@@ -88,10 +88,11 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
     """
     user_data = user_update.model_dump(exclude_unset=True)
     updated_user = await UserService.update(db, user_id, user_data)
-    if updated_user =="EMAIL_ALREADY_TAKEN":
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Email address already taken")
     if not updated_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if updated_user =="EMAIL_ALREADY_TAKEN":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Email address already taken")
+    
 
     return UserResponse.model_construct(
         id=updated_user.id,
@@ -215,7 +216,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
 
         access_token = create_access_token(
-            data={"sub": user.email, "role": str(user.role.name)},
+            data={"sub": str(user.id), "role": str(user.role.name)},
             expires_delta=access_token_expires
         )
 
@@ -232,7 +233,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Async
         access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
 
         access_token = create_access_token(
-            data={"sub": user.email, "role": str(user.role.name)},
+            data={"sub": str(user.id), "role": str(user.role.name)},
             expires_delta=access_token_expires
         )
 
@@ -251,3 +252,179 @@ async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get
     if await UserService.verify_email_with_token(db, user_id, token):
         return {"message": "Email verified successfully"}
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
+
+
+from app.schemas.events_schema import EventCreate, EventResponse, EventUpdate,EventListResponse
+from app.services.events_service import EventService
+from app.utils.link_generation import create_event_links, generate_pagination_links
+
+
+@router.get("/events/{event_id}", response_model=EventResponse, name="get_event", tags=["Event Management"])
+async def get_event(
+    event_id: UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
+    current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
+    """
+    Endpoint to fetch a specific event by its unique identifier (UUID).
+
+    Args:
+        event_id: The UUID of the event to fetch.
+        request: The request object, used to generate full URLs in the response.
+        db: Dependency that provides an AsyncSession for database access.
+        current_user: The currently authenticated user, obtained through the get_current_user dependency.
+    """
+    event = await EventService.get_by_id(db, event_id)
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    return EventResponse.model_construct(
+        id = event.id,
+        title = event.title,
+        category = event.category,
+        created_at = event.created_at,
+        created_by = event.created_by,
+        end_date = event.end_date,
+        start_date= event.start_date,
+        updated_at = event.updated_at,
+        description = event.description,
+        location = event.location,
+        links=create_event_links(event.id, request))
+
+
+@router.post("/events", response_model=EventResponse,status_code=status.HTTP_201_CREATED, name="create_event", tags=["Event Management"])
+async def create_event(
+    event_data: EventCreate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
+    current_user: dict = Depends(require_role(["ADMIN", "MANAGER"])),
+):
+    """
+    Endpoint to create a new event.
+
+    Args:
+        event_data: The event data to be created, provided as a request body.
+        request: The request object, used to generate full URLs in the response.
+        db: Dependency that provides an AsyncSession for database access.
+        current_user: The currently authenticated user, obtained through the require_role dependency.
+                      Only users with the "ADMIN" or "MANAGER" role can create events.
+    """
+
+    event = await EventService.create(db, event_data.model_dump(), current_user["user_id"])
+
+    if not event:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create event")
+
+    return EventResponse.model_construct(
+        id = event.id,
+        title = event.title,
+        category = event.category,
+        created_at = event.created_at,
+        created_by = event.created_by,
+        end_date = event.end_date,
+        start_date= event.start_date,
+        updated_at = event.updated_at,
+        description = event.description,
+        location = event.location,
+        links=create_event_links(event.id, request))
+
+
+@router.put("/events/{event_id}", response_model=EventResponse, name="update_event", tags=["Event Management"])
+async def update_event(
+    event_id: UUID,
+    event_data: EventUpdate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
+    current_user: dict = Depends(require_role(["ADMIN", "MANAGER"])),
+):
+    """
+    Endpoint to update an existing event.
+
+    Args:
+        event_id: The UUID of the event to update.
+        event_data: The updated event data, provided as a request body.
+        request: The request object, used to generate full URLs in the response.
+        db: Dependency that provides an AsyncSession for database access.
+        current_user: The currently authenticated user, obtained through the require_role dependency.
+                      Only users with the "ADMIN" or "MANAGER" role can update events.
+    """
+    event_d = event_data.model_dump(exclude_unset=True)
+    event = await EventService.update(db, event_id, event_d)
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    return EventResponse.model_construct(
+        id = event.id,
+        title = event.title,
+        category = event.category,
+        created_at = event.created_at,
+        created_by = event.created_by,
+        end_date = event.end_date,
+        start_date= event.start_date,
+        updated_at = event.updated_at,
+        description = event.description,
+        location = event.location,
+        links=create_event_links(event.id, request))
+
+@router.delete("/events/{event_id}", status_code=status.HTTP_204_NO_CONTENT, name="delete_event", tags=["Event Management"])
+async def delete_event(
+    event_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
+    current_user: dict = Depends(require_role(["ADMIN", "MANAGER"])),
+):
+    """
+    Endpoint to delete an existing event.
+
+    Args:
+        event_id: The UUID of the event to delete.
+        db: Dependency that provides an AsyncSession for database access.
+        current_user: The currently authenticated user, obtained through the require_role dependency.
+                      Only users with the "ADMIN" or "MANAGER" role can delete events.
+    """
+    result = await EventService.delete(db, event_id)
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+
+@router.get("/events", response_model=EventListResponse, tags=["Event Management"])
+async def list_events(
+    request: Request,
+    skip: int = 0,
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))
+):
+    """
+    Endpoint to list all events with pagination support.
+
+    Args:
+        request: The request object, used to generate full URLs in the response.
+        db: Dependency that provides an AsyncSession for database access.
+        page: The page number for pagination.
+        page_size: The number of items to include per page.
+        current_user: The currently authenticated user, obtained through the get_current_user dependency.
+    """
+    if limit>0:
+
+        total_events = await EventService.count(db)
+        events = await EventService.get_all_events(db, skip, limit)
+        
+        event_responses = [
+                EventResponse.model_validate(event) for event in events
+            ]
+        links = generate_pagination_links(request, skip, limit,total_events)
+        return EventListResponse(
+            items=event_responses,
+            total=total_events,
+            page=skip // limit + 1,
+            size=len(event_responses),
+            links=links,
+        )
+    raise HTTPException(status_code=400, detail="Limit must be greater than 0")

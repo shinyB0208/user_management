@@ -30,7 +30,7 @@ from faker import Faker
 # Application-specific imports
 from app.main import app
 from app.database import Base, Database
-from app.models.user_model import User, UserRole
+from app.models.models import User, UserRole
 from app.dependencies import get_db, get_settings
 from app.utils.security import hash_password
 from app.utils.template_manager import TemplateManager
