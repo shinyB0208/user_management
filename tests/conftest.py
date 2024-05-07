@@ -30,12 +30,13 @@ from faker import Faker
 # Application-specific imports
 from app.main import app
 from app.database import Base, Database
-from app.models.models import User, UserRole
+from app.models.models import User, UserRole, Event, EventCategory
 from app.dependencies import get_db, get_settings
 from app.utils.security import hash_password
 from app.utils.template_manager import TemplateManager
 from app.services.email_service import EmailService
 from app.services.jwt_service import create_access_token
+from datetime import datetime
 
 fake = Faker()
 
@@ -238,3 +239,20 @@ def email_service():
         mock_service.send_verification_email.return_value = None
         mock_service.send_user_email.return_value = None
         return mock_service
+    
+@pytest.fixture
+async def event(db_session: AsyncSession,admin_user):
+
+    event = Event(
+    category= EventCategory.TECH,
+    title= "Tech Conference 2024",
+    end_date= datetime(2024,5,6,12,13,14,15,None),
+    start_date= datetime(2024,5,2,12,13,14,15,None),
+    description= "Annual technology conference featuring keynotes and workshops.",
+    location= "New York City, USA",
+    created_by= admin_user.id
+    )
+    db_session.add(event)
+    await db_session.commit()
+
+    return event

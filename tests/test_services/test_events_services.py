@@ -27,3 +27,10 @@ async def test_create_event_with_invalid_data(db_session, admin_user):
     }
     event = await EventService.create(db_session, event_data, admin_user.id)
     assert event is None
+
+# Test fetching a user by ID when the user exists
+async def test_get_by_id_event_exists(db_session, event):
+    print(event)
+    retrieved_event = await EventService.get_by_id(db_session, event.id)
+    print(retrieved_event)
+    assert retrieved_event.id == event.id

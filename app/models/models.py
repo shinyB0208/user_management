@@ -36,7 +36,7 @@ class Event(Base):
     """
     __tablename__ = "events"
     # ... other columns ...
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title: Mapped[str] = Column(String(255), nullable=False)
     description: Mapped[str] = Column(String(1000), nullable=False)
     start_date: Mapped[datetime] = Column(DateTime(timezone=True), nullable=False)
