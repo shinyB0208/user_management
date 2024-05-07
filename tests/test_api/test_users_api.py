@@ -82,13 +82,12 @@ async def test_create_user_invalid_email(async_client):
     assert response.status_code == 422
 
 @pytest.mark.asyncio
-async def test_create_user(async_client,admin_token):
-    headers = {"Authorization": f"Bearer {admin_token}"}
+async def test_create_user(async_client):
     data = {"email": "jon.does@example.com",
         "password": "AnotherPassword123!",
         "role" : "ANONYMOUS"}
-    response = await async_client.post("/users/", json=data,headers=headers)
-    assert response.status_code == 201
+    response = await async_client.post("/register/", json=data)
+    assert response.status_code == 200
     assert response.json()["email"] == data["email"]
 
 
