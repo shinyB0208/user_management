@@ -180,9 +180,9 @@ async def list_users(
         user_responses = [
             UserResponse.model_validate(user) for user in users
         ]
-
+        
         pagination_links = generate_pagination_links(request, skip, limit, total_users)
-
+        
         # Construct the final response with pagination details
         return UserListResponse(
             items=user_responses,
@@ -191,7 +191,6 @@ async def list_users(
             size=len(user_responses),
             links=pagination_links  # Ensure you have appropriate logic to create these links
         )
-
     raise HTTPException(status_code=400, detail="Limit must be greater than 0")
 
 
