@@ -65,13 +65,12 @@ class UserService:
             new_user.nickname = new_nickname
             logger.info(f"User Role: {new_user.role}")
             user_count = await cls.count(session)
-            new_user.role = UserRole.ADMIN if user_count == 0 else UserRole.ANONYMOUS            
+
+            new_user.role = UserRole.ADMIN if user_count == 0 else UserRole.ANONYMOUS
             if new_user.role == UserRole.ADMIN:
                 new_user.email_verified = True
-
             else:
                 new_user.verification_token = generate_verification_token()
-
             session.add(new_user)
             await session.commit()
             if new_user.role != UserRole.ADMIN:
@@ -91,15 +90,21 @@ class UserService:
                 if existing_user and existing_user.id!=user_id:
                     logger.error("User with given email already exists.")
                     return None
-
             if 'password' in validated_data:
                 validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             query = update(User).where(User.id == user_id).values(**validated_data).execution_options(synchronize_session="fetch")
             await cls._execute_query(session, query)
             updated_user = await cls.get_by_id(session, user_id)
-            session.refresh(updated_user)  # Explicitly refresh the updated user object
-            logger.info(f"User {user_id} updated successfully.")
-            return updated_user
+            if updated_user:
+                session.refresh(updated_user)  # Explicitly refresh the updated user object
+                logger.info(f"User {user_id} updated successfully.")
+                return updated_user
+            else:
+                logger.error(f"User {user_id} not found after update attempt.")
+            return None
+        except Exception as e:  # Broad exception handling for debugging
+            logger.error(f"Error during user update: {e}")
+            return None
 
     @classmethod
     async def delete(cls, session: AsyncSession, user_id: UUID) -> bool:
